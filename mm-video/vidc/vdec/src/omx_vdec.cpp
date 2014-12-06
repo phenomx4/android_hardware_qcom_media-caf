@@ -4542,7 +4542,7 @@ OMX_ERRORTYPE  omx_vdec::use_output_buffer(
         drv_ctx.op_buf_ion_info[i].ion_device_fd = alloc_map_ion_memory(
                 drv_ctx.op_buf.buffer_size,drv_ctx.op_buf.alignment,
                 &drv_ctx.op_buf_ion_info[i].ion_alloc_data,
-                &drv_ctx.op_buf_ion_info[i].fd_ion_data,ION_FLAG_CACHED);
+                &drv_ctx.op_buf_ion_info[i].fd_ion_data,CACHED);
         if(drv_ctx.op_buf_ion_info[i].ion_device_fd < 0) {
           return OMX_ErrorInsufficientResources;
         }
@@ -5153,7 +5153,7 @@ OMX_ERRORTYPE  omx_vdec::allocate_input_buffer(
  drv_ctx.ip_buf_ion_info[i].ion_device_fd = alloc_map_ion_memory(
                     drv_ctx.ip_buf.buffer_size,drv_ctx.op_buf.alignment,
                     &drv_ctx.ip_buf_ion_info[i].ion_alloc_data,
-		    &drv_ctx.ip_buf_ion_info[i].fd_ion_data,ION_FLAG_CACHED);
+		    &drv_ctx.ip_buf_ion_info[i].fd_ion_data,CACHED);
     if(drv_ctx.ip_buf_ion_info[i].ion_device_fd < 0) {
         DEBUG_PRINT_ERROR("alloc_input: alloc_map_ion_memory() failed!!");
         return OMX_ErrorInsufficientResources;
@@ -5484,7 +5484,7 @@ OMX_ERRORTYPE  omx_vdec::allocate_output_buffer(
     drv_ctx.op_buf_ion_info[i].ion_device_fd = alloc_map_ion_memory(
                     drv_ctx.op_buf.buffer_size,drv_ctx.op_buf.alignment,
                     &drv_ctx.op_buf_ion_info[i].ion_alloc_data,
-                    &drv_ctx.op_buf_ion_info[i].fd_ion_data, ION_FLAG_CACHED);
+                    &drv_ctx.op_buf_ion_info[i].fd_ion_data, CACHED);
     if (drv_ctx.op_buf_ion_info[i].ion_device_fd < 0) {
         return OMX_ErrorInsufficientResources;
      }
@@ -8077,14 +8077,14 @@ int omx_vdec::alloc_map_ion_memory(OMX_U32 buffer_size,
     return fd;
   }
   alloc_data->flags = 0;
-  if (!secure_mode && (flag & ION_FLAG_CACHED))
+  if (!secure_mode && (flag & CACHED))
   {
-    alloc_data->flags |= ION_FLAG_CACHED;
+    alloc_data->flags |= CACHED;
   }
   if (m_use_uncache_buffers && !arbitrary_bytes &&
-     (alloc_data->flags & ION_FLAG_CACHED))
+     (alloc_data->flags & CACHED))
   {
-    alloc_data->flags &= ~ION_FLAG_CACHED;
+    alloc_data->flags &= ~CACHED;
     DEBUG_PRINT_HIGH("uncache buffers requested, flags = 0x%x",
        alloc_data->flags);
   }
@@ -8096,27 +8096,9 @@ int omx_vdec::alloc_map_ion_memory(OMX_U32 buffer_size,
   }
 
   if(secure_mode) {
-    if(external_meta_buffer) {
-      alloc_data->heap_mask = ION_HEAP(ION_CP_MFC_HEAP_ID);
-      alloc_data->flags |= ION_SECURE;
-    } else if (external_meta_buffer_iommu) {
-      alloc_data->heap_mask = ION_HEAP(ION_IOMMU_HEAP_ID);
-#ifdef NO_IOMMU
-      alloc_data->heap_mask |= ION_HEAP(MEM_HEAP_ID);
-#endif
-    } else {
-      alloc_data->heap_mask = ION_HEAP(MEM_HEAP_ID);
-      alloc_data->flags |= ION_SECURE;
-    }
+    alloc_data->flags = (ION_HEAP(MEM_HEAP_ID) | ION_SECURE);
   } else {
-#ifdef MAX_RES_720P
-    alloc_data->heap_mask = ION_HEAP(MEM_HEAP_ID);
-#else
-    alloc_data->heap_mask = (ION_HEAP(ION_IOMMU_HEAP_ID));
-#ifdef NO_IOMMU
-      alloc_data->heap_mask |= ION_HEAP(MEM_HEAP_ID);
-#endif
-#endif
+    alloc_data->flags = (ION_HEAP(ION_IOMMU_HEAP_ID));
   }
   pthread_mutex_lock(&m_vdec_ionlock);
   rc = ioctl(fd,ION_IOC_ALLOC,alloc_data);
@@ -8137,8 +8119,7 @@ int omx_vdec::alloc_map_ion_memory(OMX_U32 buffer_size,
 
   DEBUG_PRINT_HIGH("ion_alloc: device_fd = %d, len = %d, align = %d, "
      "flags = 0x%x, heap_mask = 0x%x, handle = %p, fd = %d", fd,
-     alloc_data->len, alloc_data->align, alloc_data->flags,
-     alloc_data->heap_mask, fd_data->handle, fd_data->fd);
+     alloc_data->len, alloc_data->align, alloc_data->flags, fd_data->handle, fd_data->fd);
   pthread_mutex_unlock(&m_vdec_ionlock);
   return fd;
 
@@ -10019,7 +10000,7 @@ OMX_ERRORTYPE omx_vdec::vdec_alloc_h264_mv()
  drv_ctx.h264_mv.ion_device_fd = alloc_map_ion_memory(
                     size, 8192,
                     &drv_ctx.h264_mv.ion_alloc_data,
-                    &drv_ctx.h264_mv.fd_ion_data,ION_FLAG_CACHED);
+                    &drv_ctx.h264_mv.fd_ion_data,CACHED);
   if (drv_ctx.h264_mv.ion_device_fd < 0) {
         return OMX_ErrorInsufficientResources;
   }

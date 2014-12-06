@@ -2244,7 +2244,7 @@ OMX_ERRORTYPE  omx_video::use_input_buffer(
 #ifdef USE_ION
       m_pInput_ion[i].ion_device_fd = alloc_map_ion_memory(m_sInPortDef.nBufferSize,
                                       &m_pInput_ion[i].ion_alloc_data,
-                                      &m_pInput_ion[i].fd_ion_data,ION_FLAG_CACHED);
+                                      &m_pInput_ion[i].fd_ion_data,CACHED);
       if(m_pInput_ion[i].ion_device_fd < 0) {
         DEBUG_PRINT_ERROR("\nERROR:ION device open() Failed");
         return OMX_ErrorInsufficientResources;
@@ -2445,7 +2445,7 @@ OMX_ERRORTYPE  omx_video::use_output_buffer(
         m_pOutput_ion[i].ion_device_fd = alloc_map_ion_memory(
                                          m_sOutPortDef.nBufferSize,
                                          &m_pOutput_ion[i].ion_alloc_data,
-                                         &m_pOutput_ion[i].fd_ion_data,ION_FLAG_CACHED);
+                                         &m_pOutput_ion[i].fd_ion_data,CACHED);
       if(m_pOutput_ion[i].ion_device_fd < 0) {
         DEBUG_PRINT_ERROR("\nERROR:ION device open() Failed");
         return OMX_ErrorInsufficientResources;
@@ -2875,7 +2875,7 @@ OMX_ERRORTYPE  omx_video::allocate_input_buffer(
     }
     else
     {
-      flags = ION_FLAG_CACHED;
+      flags = CACHED;
     }
 #ifdef USE_ION
     m_pInput_ion[i].ion_device_fd = alloc_map_ion_memory(m_sInPortDef.nBufferSize,
@@ -3039,7 +3039,7 @@ OMX_ERRORTYPE  omx_video::allocate_output_buffer(
 #ifdef USE_ION
       m_pOutput_ion[i].ion_device_fd = alloc_map_ion_memory(m_sOutPortDef.nBufferSize,
                                        &m_pOutput_ion[i].ion_alloc_data,
-                                       &m_pOutput_ion[i].fd_ion_data,ION_FLAG_CACHED);
+                                       &m_pOutput_ion[i].fd_ion_data,CACHED);
       if(m_pOutput_ion[i].ion_device_fd < 0) {
         DEBUG_PRINT_ERROR("\nERROR:ION device open() Failed");
         return OMX_ErrorInsufficientResources;
@@ -4464,25 +4464,22 @@ int omx_video::alloc_map_ion_memory(int size,struct ion_allocation_data *alloc_d
         alloc_data->len = size;
         alloc_data->align = 4096;
         alloc_data->flags = 0;
-        if(!secure_session && (flag & ION_FLAG_CACHED))
+        if(!secure_session && (flag & CACHED))
         {
-          alloc_data->flags = ION_FLAG_CACHED;
+          alloc_data->flags = CACHED;
         }
         if (dev_get_uncache_flag() &&
-           (alloc_data->flags & ION_FLAG_CACHED))
+           (alloc_data->flags & CACHED))
         {
-          alloc_data->flags &= ~ION_FLAG_CACHED;
+          alloc_data->flags &= ~CACHED;
           DEBUG_PRINT_HIGH("uncache buffers requested, flags = 0x%x",
              alloc_data->flags);
         }
 
         if (secure_session)
-           alloc_data->heap_mask = (ION_HEAP(MEM_HEAP_ID) | ION_SECURE);
+           alloc_data->flags = (ION_HEAP(MEM_HEAP_ID) | ION_SECURE);
         else
-#ifdef MAX_RES_720P
-           alloc_data->heap_mask = ION_HEAP(MEM_HEAP_ID);
-#else
-           alloc_data->heap_mask = (ION_HEAP(MEM_HEAP_ID) |
+           alloc_data->flags = (ION_HEAP(MEM_HEAP_ID) |
                 ION_HEAP(ION_IOMMU_HEAP_ID));
 #endif
         pthread_mutex_lock(&m_venc_ionlock);
@@ -4502,9 +4499,9 @@ int omx_video::alloc_map_ion_memory(int size,struct ion_allocation_data *alloc_d
             goto error_case;
         }
         DEBUG_PRINT_HIGH("ion_alloc: device_fd = %d, len = %d, align = %d, "
-           "flags = 0x%x, heap_mask = 0x%x, handle = %p, fd = %d", ion_device_fd,
+           "flags = 0x%x, handle = %p, fd = %d", ion_device_fd,
            alloc_data->len, alloc_data->align, alloc_data->flags,
-           alloc_data->heap_mask, fd_data->handle, fd_data->fd);
+           fd_data->handle, fd_data->fd);
         pthread_mutex_unlock(&m_venc_ionlock);
         return ion_device_fd;
 
