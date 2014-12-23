@@ -1588,7 +1588,6 @@ OMX_U32 venc_dev::pmem_free()
   }
   return 0;
 }
-#endif
 
 void venc_dev::venc_config_print()
 {

@@ -4538,7 +4538,7 @@ void omx_video::free_ion_memory(struct venc_ion *buf_ion_info)
      buf_ion_info->fd_ion_data.fd = -1;
      pthread_mutex_unlock(&m_venc_ionlock);
 }
-#endif
+
 #ifdef _ANDROID_ICS_
 void omx_video::omx_release_meta_buffer(OMX_BUFFERHEADERTYPE *buffer)
 {
